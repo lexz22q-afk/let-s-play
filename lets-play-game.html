@@ -1,0 +1,957 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Let's play! — День на площадке</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#2A2E45; --ink2:#5b607a; --card:#ffffff;
+    --purple:#7C4DFF; --purple-d:#5b34d6;
+    --orange:#FF8A3D; --orange-d:#f26f1c;
+    --gold:#FFC93C; --green:#25b268; --green-d:#1c9457;
+    --red:#e8503a; --red-d:#c93a26; --blue:#5AA9E6;
+    --line:#e7e9f2;
+    --shadow:0 10px 26px rgba(40,44,80,.14);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Nunito',system-ui,Arial,sans-serif;
+    color:var(--ink); font-weight:700;
+    font-style:normal;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  #sky{position:fixed; inset:0; z-index:-1; transition:background 1.1s ease;
+    background:linear-gradient(180deg,#BDE7FF 0%, #E8F7FF 100%);}
+  #sky.s1{background:linear-gradient(180deg,#9FD8FF 0%, #FFF3D6 100%);}
+  #sky.s2{background:linear-gradient(180deg,#FFD59E 0%, #FFE9C7 100%);}
+  #sky.s3{background:linear-gradient(180deg,#FFB37A 0%, #FF9DB0 100%);}
+
+  .wrap{max-width:820px; margin:0 auto; padding:10px 12px 22px;}
+
+  /* HUD */
+  .hud{
+    background:rgba(255,255,255,.92); border:2px solid #fff; border-radius:18px;
+    box-shadow:var(--shadow); padding:10px 12px; margin-bottom:12px;
+    position:sticky; top:6px; z-index:20; backdrop-filter:blur(4px);
+  }
+  .hud-top{display:flex; align-items:center; gap:10px; justify-content:space-between;}
+  .mascot-mini{width:44px; height:44px; flex:0 0 auto;}
+  .mascot-hud{width:44px !important; height:44px !important; display:block;}
+  .stage-label{font-weight:900; font-size:15px; color:var(--purple-d); line-height:1.05;}
+  .stage-sub{font-weight:700; font-size:12px; color:var(--ink2);}
+  .score-box{display:flex; align-items:center; gap:6px; background:#fff7e0;
+    border:2px solid var(--gold); border-radius:14px; padding:6px 12px; font-weight:900; font-size:18px;}
+  .score-box .star{font-size:18px;}
+  #scoreNum{min-width:26px; text-align:right; display:inline-block; transition:transform .15s;}
+  #scoreNum.pop{transform:scale(1.35); color:var(--green-d);}
+  .meter-row{display:flex; align-items:center; gap:8px; margin-top:9px;}
+  .meter-ico{font-size:18px;}
+  .meter{flex:1; height:14px; background:#eef0f7; border-radius:99px; overflow:hidden; border:1px solid #e2e5f0;}
+  .meter > i{display:block; height:100%; width:0%;
+    background:linear-gradient(90deg,#FFD34d,#FF8A3D); border-radius:99px; transition:width .5s cubic-bezier(.2,.8,.2,1);}
+  .meter-pct{font-size:12px; color:var(--ink2); min-width:34px; text-align:right;}
+
+  /* Card */
+  .card{background:var(--card); border-radius:22px; box-shadow:var(--shadow);
+    border:2px solid #fff; padding:18px 16px 16px; position:relative; overflow:hidden;}
+  .q-title{font-weight:900; font-size:19px; margin:2px 0 4px; line-height:1.25;}
+  .q-hint{color:var(--ink2); font-weight:700; font-size:14px; margin-bottom:12px;}
+
+  .big-ico{font-size:74px; text-align:center; line-height:1; margin:6px 0 14px;}
+  .big-ico .ic-svg{width:78px; height:78px; vertical-align:middle;}
+  .emo{display:inline-block;}
+
+  /* Options grid */
+  .opts{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  @media (max-width:520px){ .opts{grid-template-columns:1fr;} }
+  .opt{
+    background:#f6f7fb; border:2.5px solid #e6e8f2; border-radius:16px;
+    padding:14px 12px; font-weight:800; font-size:17px; color:var(--ink);
+    cursor:pointer; text-align:center; transition:transform .08s, background .15s, border-color .15s;
+    display:flex; align-items:center; justify-content:center; gap:8px; min-height:56px;
+    user-select:none;
+  }
+  .opt .oic{font-size:24px;}
+  .opt:hover{background:#eef0f9;}
+  .opt:active{transform:translateY(2px) scale(.99);}
+  .opt.correct{background:#e4f7ec; border-color:var(--green); color:var(--green-d);}
+  .opt.wrong{background:#fdeae6; border-color:var(--red); color:var(--red-d);}
+  .opt.dim{opacity:.55;}
+  .opt.locked{pointer-events:none;}
+
+  /* True / False */
+  .tf-row{display:flex; gap:12px; justify-content:center; margin-top:6px;}
+  .tf-btn{flex:1; max-width:220px; border-radius:16px; padding:16px; font-size:19px; font-weight:900;
+    cursor:pointer; border:2.5px solid; user-select:none; transition:transform .08s;}
+  .tf-btn:active{transform:translateY(2px);}
+  .tf-true{background:#eef7ff; border-color:#bcdcff; color:#1f6fb0;}
+  .tf-false{background:#fff0f0; border-color:#ffcccc; color:#b33;}
+  .tf-btn.correct{background:#e4f7ec; border-color:var(--green); color:var(--green-d);}
+  .tf-btn.wrong{background:#fdeae6; border-color:var(--red); color:var(--red-d);}
+
+  .statement{background:#f6f7fb; border:2px dashed #d9dcea; border-radius:16px;
+    padding:14px; text-align:center; margin:8px 0 14px; display:flex; align-items:center; justify-content:center; gap:12px;}
+  .statement .s-ico{font-size:44px;} .statement .s-ico .ic-svg{width:46px;height:46px;}
+  .statement .s-txt{font-weight:900; font-size:22px;}
+
+  /* Input */
+  .type-wrap{display:flex; flex-direction:column; gap:10px; align-items:stretch;}
+  .type-row{display:flex; gap:8px;}
+  input.answer{
+    flex:1; font-family:inherit; font-weight:800; font-size:19px; color:var(--ink);
+    padding:14px 14px; border-radius:14px; border:2.5px solid #d9dcea; background:#fff; outline:none; min-width:0;
+  }
+  input.answer:focus{border-color:var(--purple);}
+  input.answer.ok{border-color:var(--green); background:#f2fbf6;}
+  input.answer.bad{border-color:var(--red); background:#fdf1ee;}
+
+  .btn{border:none; border-radius:14px; padding:14px 18px; font-family:inherit; font-weight:900; font-size:17px;
+    cursor:pointer; color:#fff; background:var(--purple); box-shadow:0 4px 0 var(--purple-d); transition:transform .06s;}
+  .btn:active{transform:translateY(3px); box-shadow:0 1px 0 var(--purple-d);}
+  .btn.orange{background:var(--orange); box-shadow:0 4px 0 var(--orange-d);}
+  .btn.grey{background:#8b90a6; box-shadow:0 4px 0 #6f748a;}
+  .btn.wide{width:100%;}
+  .btn:disabled{opacity:.5; cursor:default; transform:none;}
+
+  /* Sound button */
+  .sound-btn{width:100%; background:#eef2ff; color:var(--purple-d); border:2.5px solid #d7ddff;
+    border-radius:16px; padding:18px; font-size:20px; font-weight:900; cursor:pointer; display:flex;
+    align-items:center; justify-content:center; gap:10px;}
+  .sound-btn:active{transform:translateY(2px);}
+  .sound-btn .wave{font-size:26px;}
+
+  /* Word-order chips */
+  .build-row{min-height:58px; background:#f6f7fb; border:2px dashed #d9dcea; border-radius:14px;
+    padding:8px; display:flex; flex-wrap:wrap; gap:8px; align-content:flex-start; margin-bottom:10px;}
+  .bank-row{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;}
+  .chip{background:#fff; border:2.5px solid #e0e3f0; border-radius:12px; padding:10px 14px; font-weight:800;
+    font-size:17px; cursor:pointer; user-select:none;}
+  .chip:active{transform:translateY(2px);}
+  .chip.used{opacity:.35; pointer-events:none;}
+  .build-row .chip{background:#efe9ff; border-color:#cdbcff;}
+
+  /* Anagram tiles */
+  .ana-answer{min-height:56px; display:flex; flex-wrap:wrap; gap:6px; justify-content:center;
+    background:#f6f7fb; border:2px dashed #d9dcea; border-radius:14px; padding:10px; margin-bottom:10px;}
+  .ana-bank{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:12px;}
+  .tile{width:46px; height:52px; border-radius:12px; background:#fff; border:2.5px solid #e0e3f0;
+    display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:900; cursor:pointer; text-transform:lowercase;}
+  .tile:active{transform:translateY(2px);}
+  .tile.used{opacity:.3; pointer-events:none;}
+  .ana-answer .tile{background:#efe9ff; border-color:#cdbcff;}
+
+  /* Memory */
+  .mem-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+  @media (max-width:520px){ .mem-grid{grid-template-columns:repeat(2,1fr);} }
+  .mem-card{position:relative; height:74px; border-radius:14px; cursor:pointer; perspective:600px;}
+  .mem-inner{position:absolute; inset:0; transition:transform .35s; transform-style:preserve-3d;}
+  .mem-card.flip .mem-inner{transform:rotateY(180deg);}
+  .mem-face{position:absolute; inset:0; border-radius:14px; display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:6px; font-weight:900; backface-visibility:hidden; font-size:15px; line-height:1.15;}
+  .mem-back{background:linear-gradient(135deg,#7C4DFF,#9d7bff); color:#fff; font-size:30px;}
+  .mem-front{background:#fff; border:2.5px solid #e0e3f0; transform:rotateY(180deg);}
+  .mem-front .ic-svg{width:30px;height:30px;}
+  .mem-card.matched .mem-front{background:#e4f7ec; border-color:var(--green); color:var(--green-d);}
+  .mem-card.matched{cursor:default;}
+
+  /* Whack */
+  .whack-target{text-align:center; font-weight:900; font-size:20px; margin:6px 0 14px;}
+  .whack-target b{color:var(--purple-d);}
+  .holes{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+  @media (max-width:520px){ .holes{grid-template-columns:repeat(2,1fr);} }
+  .hole{position:relative; height:92px; background:radial-gradient(ellipse at 50% 100%, #caa26a 0%, #8a6a3f 70%);
+    border-radius:50%/40%; overflow:hidden; display:flex; align-items:flex-end; justify-content:center;}
+  .mole{width:88%; margin-bottom:6px; background:#fff; border:2.5px solid #e0e3f0; border-radius:14px 14px 10px 10px;
+    padding:8px 4px; font-weight:800; font-size:14px; text-align:center; cursor:pointer;
+    transform:translateY(120%); transition:transform .35s cubic-bezier(.2,.9,.3,1.2);}
+  .mole.up{transform:translateY(0);}
+  .mole.shake{animation:shake .4s;}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .mole.correct{background:#e4f7ec; border-color:var(--green); color:var(--green-d);}
+
+  /* Boss */
+  .boss-stage{text-align:center;}
+  .boss-svg{width:120px; height:120px; margin:0 auto 4px; display:block;}
+  .boss-svg.hit{animation:bosshit .35s;}
+  @keyframes bosshit{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px) rotate(-3deg)}60%{transform:translateX(8px) rotate(3deg)}}
+  .hp-wrap{max-width:320px; margin:0 auto 12px;}
+  .hp-label{font-weight:900; color:var(--red-d); margin-bottom:4px;}
+  .hp{height:18px; background:#f0d6d0; border-radius:99px; overflow:hidden; border:2px solid #eab8ae;}
+  .hp > i{display:block; height:100%; background:linear-gradient(90deg,#ff6b52,#e8503a); transition:width .45s;}
+
+  /* Feedback banner */
+  .fb{margin-top:14px; border-radius:16px; padding:14px 44px 14px 16px; font-weight:900; font-size:18px; position:relative; display:none;}
+  .fb.show{display:block; animation:pop .25s;}
+  @keyframes pop{from{transform:scale(.9); opacity:0} to{transform:scale(1); opacity:1}}
+  .fb.good{background:#e4f7ec; color:var(--green-d); border:2.5px solid var(--green);}
+  .fb.bad{background:#fdeae6; color:var(--red-d); border:2.5px solid var(--red);}
+  .fb .answer-line{font-size:16px; margin-top:6px; color:var(--ink);}
+  .fb .answer-line b{color:var(--green-d);}
+  .fb-close{position:absolute; top:8px; right:8px; width:30px; height:30px; border-radius:50%;
+    border:none; background:rgba(0,0,0,.08); color:var(--ink); font-weight:900; font-size:18px; cursor:pointer; line-height:1;}
+  .fb-close:hover{background:rgba(0,0,0,.15);}
+
+  /* nav */
+  .nav{display:flex; justify-content:space-between; align-items:center; margin-top:14px; gap:10px;}
+  .back-btn{background:#fff; border:2.5px solid #e0e3f0; color:var(--ink2); border-radius:14px;
+    padding:10px 16px; font-family:inherit; font-weight:900; font-size:15px; cursor:pointer;}
+  .back-btn:disabled{opacity:.4; cursor:default;}
+  .counter{font-weight:800; color:var(--ink2); font-size:14px;}
+  .next-btn{background:var(--purple); box-shadow:0 4px 0 var(--purple-d);}
+
+  /* Start & final */
+  .center-card{text-align:center;}
+  .center-card h1{font-size:26px; margin:8px 0 6px;}
+  .center-card p{color:var(--ink2); font-size:16px; margin:6px 0;}
+  .mascot-big{width:150px; height:150px; margin:4px auto 0; display:block;}
+  .mascot-big.bounce{animation:bob 1.6s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .stars-final{font-size:46px; letter-spacing:6px; margin:10px 0;}
+  .final-score{font-size:22px; font-weight:900;}
+  .rules{background:#f6f7fb; border-radius:14px; padding:12px 14px; text-align:left; margin:14px 0; font-size:15px; color:var(--ink2);}
+  .rules b{color:var(--ink);}
+
+  .float-star{position:fixed; font-size:26px; pointer-events:none; z-index:60; animation:floatup 1s forwards;}
+  @keyframes floatup{from{transform:translateY(0) scale(1); opacity:1} to{transform:translateY(-90px) scale(1.6); opacity:0}}
+</style>
+</head>
+<body>
+<div id="sky"></div>
+<div class="wrap">
+  <div class="hud" id="hud">
+    <div class="hud-top">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="mascot-mini" id="mascotMini"></div>
+        <div>
+          <div class="stage-label" id="stageLabel">День на площадке</div>
+          <div class="stage-sub" id="stageSub">Готов играть?</div>
+        </div>
+      </div>
+      <div class="score-box"><span class="star">⭐</span><span id="scoreNum">0</span></div>
+    </div>
+    <div class="meter-row">
+      <span class="meter-ico">🌞</span>
+      <div class="meter"><i id="meterFill"></i></div>
+      <span class="meter-pct" id="meterPct">0%</span>
+    </div>
+  </div>
+
+  <div id="screen"></div>
+</div>
+
+<script>
+"use strict";
+
+/* ============ ЛЕКСИКА ============ */
+const ROPE_SVG = '<svg class="ic-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M8 46 C8 8 56 8 56 46" fill="none" stroke="#C74DE8" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="24" r="7" fill="#FFC08A" stroke="#8a5a2b" stroke-width="2"/><rect x="27" y="31" width="10" height="16" rx="5" fill="#5AA9E6"/><line x1="30" y1="47" x2="27" y2="57" stroke="#8a5a2b" stroke-width="3" stroke-linecap="round"/><line x1="34" y1="47" x2="37" y2="57" stroke="#8a5a2b" stroke-width="3" stroke-linecap="round"/></svg>';
+
+// clear = иконка легко узнаётся -> можно давать в "Что это?" (по картинке)
+const VOCAB = [
+  {en:"fly a kite",          ru:"запускать воздушного змея", icon:"🪁",  word:"kite",       ruWord:"воздушный змей", clear:true},
+  {en:"jump rope",           ru:"прыгать через скакалку",    icon:ROPE_SVG, word:"rope",   ruWord:"скакалка",       clear:true},
+  {en:"play baseball",       ru:"играть в бейсбол",          icon:"⚾",  word:"baseball",   ruWord:"бейсбол",        clear:true},
+  {en:"play basketball",     ru:"играть в баскетбол",        icon:"🏀",  word:"basketball", ruWord:"баскетбол",      clear:true},
+  {en:"play a game",         ru:"играть в игру",             icon:"🎲",  word:"game",       ruWord:"игра",           clear:true},
+  {en:"play hide and seek",  ru:"играть в прятки",           icon:"🙈",  word:"hide",       ruWord:"прятки",         clear:false},
+  {en:"play soccer",         ru:"играть в футбол",           icon:"⚽",  word:"soccer",     ruWord:"футбол",         clear:true},
+  {en:"ride a bike",         ru:"кататься на велосипеде",    icon:"🚲",  word:"bike",       ruWord:"велосипед",      clear:true},
+  {en:"rollerblade",         ru:"кататься на роликах",       icon:"🛼",  word:"rollerblade",ruWord:"ролики",         clear:true},
+  {en:"skateboard",          ru:"кататься на скейтборде",    icon:"🛹",  word:"skateboard", ruWord:"скейтборд",      clear:true},
+  {en:"bounce a ball",       ru:"отбивать мяч",              icon:"⛹️",  word:"bounce",     ruWord:"отбивать",       clear:false},
+  {en:"catch a ball",        ru:"ловить мяч",                icon:"🧤",  word:"catch",      ruWord:"ловить",         clear:false},
+  {en:"play tag",            ru:"играть в догонялки",        icon:"🏃",  word:"tag",        ruWord:"догонялки",      clear:false},
+  {en:"throw a ball",        ru:"бросать мяч",               icon:"🤾",  word:"throw",      ruWord:"бросать",        clear:false},
+  {en:"watch a game",        ru:"смотреть игру",             icon:"📺",  word:"watch",      ruWord:"смотреть игру",  clear:true},
+];
+
+function iconHTML(v){
+  if(v.icon.indexOf('<svg')===0) return v.icon;
+  return '<span class="emo">'+v.icon+'</span>';
+}
+
+/* ============ УТИЛИТЫ ============ */
+function norm(s){
+  return (s||"").toLowerCase()
+    .replace(/[’'`]/g,'')
+    .replace(/[-–—]/g,' ')
+    .replace(/[.,!?;:]/g,'')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+// принимаем фразу с артиклем и без ("throw a ball" = "throw ball")
+function acceptedPhrase(phrase){
+  const base=norm(phrase);
+  const set=new Set([base]);
+  const noArt=base.replace(/\b(a|an|the)\b/g,'').replace(/\s+/g,' ').trim();
+  set.add(noArt);
+  return [...set];
+}
+// "Let's " + фраза  ->  все варианты (с/без апострофа, с/без артикля)
+function acceptedLets(phrase){
+  const out=new Set();
+  acceptedPhrase(phrase).forEach(p=>{ out.add(norm("lets "+p)); });
+  return [...out];
+}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function pickDistractors(correct,pool,n,keyEn){
+  const others=shuffle(pool.filter(v=>v.en!==correct.en));
+  return others.slice(0,n);
+}
+function tokenizeWords(phrase){ return phrase.split(' '); }
+
+/* ============ СОСТОЯНИЕ ============ */
+const state={
+  score:0,
+  pointer:0,
+  tasks:[],
+  totalPoints:0,   // максимум очков
+  progressUnits:0, // всего "шагов" для шкалы
+  bossHP:8, bossMaxHP:8,
+};
+
+/* ============ ПОСТРОЕНИЕ ЗАДАНИЙ ============ */
+function buildTasks(){
+  const T=[];
+  const V=VOCAB;
+
+  // --- STAGE 1: MEMORY (3 доски по 5 пар) ---
+  const memChunks=[ V.slice(0,5), V.slice(5,10), V.slice(10,15) ];
+  memChunks.forEach((chunk,i)=>{
+    T.push({stage:"🧠 Запоминаем", sub:"Найди пары: русский и английский",
+      type:"memory", pairs:chunk, units:chunk.length});
+  });
+
+  // --- STAGE 2: PICTURE MC (только clear-иконки) ---
+  shuffle(V.filter(v=>v.clear)).forEach(v=>{
+    T.push({stage:"👀 Что это?", sub:"Посмотри на картинку и выбери фразу",
+      type:"picmc", answer:v, units:1});
+  });
+
+  // --- STAGE 3: RU -> EN MC (все 15) ---
+  shuffle(V).forEach(v=>{
+    T.push({stage:"🔤 Выбери перевод", sub:"Выбери английскую фразу",
+      type:"rumc", answer:v, units:1});
+  });
+
+  // --- STAGE 4: ANAGRAM (все 15, ключевое слово) ---
+  shuffle(V).forEach(v=>{
+    T.push({stage:"🧩 Собери слово", sub:"Нажимай на буквы по порядку",
+      type:"anagram", word:v.word, hintRu:v.ruWord, phrase:v.en, units:1});
+  });
+
+  // --- STAGE 5: WORD ORDER (Let's ...) все 15 ---
+  shuffle(V).forEach(v=>{
+    T.push({stage:"🗣️ Собери предложение", sub:"Составь: Let's ...",
+      type:"order", phrase:v.en, ru:v.ru, units:1});
+  });
+
+  // --- STAGE 6: TRUE/FALSE (иконка + фраза, совпадают?) 15 ---
+  shuffle(V).forEach(v=>{
+    const show= Math.random()<0.5;
+    const shownEn = show ? v : shuffle(V.filter(x=>x.en!==v.en))[0];
+    T.push({stage:"✅❌ Правда или ложь", sub:"Картинка и фраза совпадают?",
+      type:"tf", pic:v, shown:shownEn, isTrue:(shownEn.en===v.en), units:1});
+  });
+
+  // --- STAGE 7: TYPE "Let's ..." (по-русски -> напиши по-английски) 15 ---
+  shuffle(V).forEach(v=>{
+    T.push({stage:"✍️ Впиши фразу", sub:"Напиши предложение по-английски",
+      type:"type", phrase:v.en, ru:v.ru, mode:"lets", units:1});
+  });
+
+  // --- STAGE 8: LISTEN & TYPE (12) ---
+  shuffle(V).slice(0,12).forEach(v=>{
+    T.push({stage:"🎧 Слушай и пиши", sub:"Послушай и напиши фразу",
+      type:"listen", phrase:v.en, units:1});
+  });
+
+  // --- STAGE 9: WHACK-A-MOLE (8) ---
+  shuffle(V).slice(0,8).forEach(v=>{
+    const wrong=shuffle(V.filter(x=>x.en!==v.en)).slice(0,5);
+    const moles=shuffle([v,...wrong]);
+    T.push({stage:"🔨 Поймай ответ", sub:"Нажми на нужную фразу",
+      type:"whack", answer:v, moles:moles, units:1});
+  });
+
+  // --- STAGE 10: BOSS (10 вопросов MC) ---
+  shuffle(V.concat(shuffle(V).slice(0,5))).slice(0,10).forEach((v,i)=>{
+    T.push({stage:"🌧️ Финальный босс", sub:"Прогони Скучный Дождь!",
+      type:"boss", answer:v, units:1});
+  });
+
+  state.tasks=T;
+  state.progressUnits=T.reduce((s,t)=>s+t.units,0);
+  state.totalPoints=state.progressUnits*10;
+}
+
+/* ============ HUD / ПРОГРЕСС / ФОН ============ */
+let doneUnits=0;
+function updateHUD(t){
+  document.getElementById('stageLabel').textContent = t? t.stage : "Готово!";
+  document.getElementById('stageSub').textContent   = t? t.sub   : "";
+  const mini=document.getElementById('mascotMini');
+  if(t){ if(!mini.dataset.on){ mini.innerHTML=mascotSVG(44,'mascot-hud'); mini.dataset.on='1'; } }
+  else { mini.innerHTML=''; mini.dataset.on=''; }
+  const pct = state.progressUnits? Math.round(doneUnits/state.progressUnits*100):0;
+  document.getElementById('meterFill').style.width = pct+"%";
+  document.getElementById('meterPct').textContent = pct+"%";
+  const sky=document.getElementById('sky');
+  sky.className = pct>=75?"s3":pct>=50?"s2":pct>=25?"s1":"";
+}
+function addScore(n, ev){
+  state.score+=n; doneUnits+=1;
+  const el=document.getElementById('scoreNum');
+  el.textContent=state.score;
+  el.classList.add('pop'); setTimeout(()=>el.classList.remove('pop'),200);
+  // летящая звезда
+  if(ev){
+    const s=document.createElement('div'); s.className='float-star'; s.textContent='⭐';
+    s.style.left=(ev.clientX||window.innerWidth/2)+'px'; s.style.top=(ev.clientY||120)+'px';
+    document.body.appendChild(s); setTimeout(()=>s.remove(),1000);
+  }
+}
+
+/* ============ РЕНДЕР ============ */
+const screen=()=>document.getElementById('screen');
+
+function currentTask(){ return state.tasks[state.pointer]; }
+
+function render(){
+  if(state.pointer>=state.tasks.length){ renderFinal(); return; }
+  const t=currentTask();
+  updateHUD(t);
+  const map={memory:renderMemory, picmc:renderPicMC, rumc:renderRuMC,
+    anagram:renderAnagram, order:renderOrder, tf:renderTF, type:renderType,
+    listen:renderListen, whack:renderWhack, boss:renderBoss};
+  map[t.type](t);
+}
+
+/* nav-панель */
+function navHTML(showNext){
+  return '<div class="nav">'
+    +'<button class="back-btn" id="backBtn" '+(state.pointer===0?'disabled':'')+'>← Назад</button>'
+    +'<span class="counter">Задание '+(state.pointer+1)+' из '+state.tasks.length+'</span>'
+    +(showNext?'<button class="btn next-btn" id="fwdBtn">Дальше →</button>':'<span style="width:60px"></span>')
+    +'</div>';
+}
+function wireNav(){
+  const b=document.getElementById('backBtn');
+  if(b) b.onclick=()=>{ if(state.pointer>0){ state.pointer--; render(); } };
+  const f=document.getElementById('fwdBtn');
+  if(f) f.onclick=()=>{ advance(); };
+}
+function advance(){ state.pointer++; render(); }
+
+/* фидбек */
+function feedbackHTML(){ return '<div class="fb" id="fb"></div>'; }
+function showGood(ev){
+  const fb=document.getElementById('fb');
+  fb.className='fb good show';
+  fb.innerHTML='ВЕРНО! +10 ⭐';
+  addScore(10,ev);
+  setTimeout(()=>{ advance(); }, 1300);
+}
+// неверно: панель с крестиком, НЕ исчезает сама
+function showBad(correctText, onClose){
+  const fb=document.getElementById('fb');
+  fb.className='fb bad show';
+  fb.innerHTML='<button class="fb-close" id="fbClose" aria-label="Закрыть">✕</button>'
+    +'Не верно.'
+    +(correctText?'<div class="answer-line">Правильно: <b>'+correctText+'</b></div>':'');
+  doneUnits+=0; // без очков, но шаг сюжета не двигаем на ошибке
+  document.getElementById('fbClose').onclick=()=>{ if(onClose) onClose(); };
+}
+// подсказка "ещё попытка" (2 попытки), с крестиком
+function showRetry(msg){
+  const fb=document.getElementById('fb');
+  fb.className='fb bad show';
+  fb.innerHTML='<button class="fb-close" id="fbClose" aria-label="Закрыть">✕</button>'+ (msg||'Почти! Попробуй ещё раз.');
+  document.getElementById('fbClose').onclick=()=>{ fb.className='fb'; };
+}
+
+/* ---------- MEMORY ---------- */
+function renderMemory(t){
+  if(!t.matched) t.matched=[];
+  const cards=[];
+  t.pairs.forEach((v,i)=>{
+    cards.push({pid:i, kind:'ru', text:v.ru});
+    cards.push({pid:i, kind:'en', text:v.en, ico:v});
+  });
+  if(!t.order) t.order=shuffle(cards);
+  const done = t.matched.length===t.pairs.length;
+
+  let html='<div class="card"><div class="q-title">🧠 Найди пары</div>'
+    +'<div class="q-hint">Нажми на русскую карточку и её английскую пару.</div>'
+    +'<div class="mem-grid" id="memGrid">';
+  t.order.forEach((c,idx)=>{
+    const matched=t.matched.indexOf(c.pid)>=0;
+    const face = c.kind==='en' && c.ico ? (iconHTML(c.ico)+'<br>'+c.text) : c.text;
+    html+='<div class="mem-card '+(matched?'flip matched':(done?'flip':''))+'" data-idx="'+idx+'" data-pid="'+c.pid+'">'
+      +'<div class="mem-inner"><div class="mem-face mem-back">?</div>'
+      +'<div class="mem-face mem-front">'+face+'</div></div></div>';
+  });
+  html+='</div>'+feedbackHTML()+navHTML(done)+'</div>';
+  screen().innerHTML=html; wireNav();
+
+  if(done) return;
+
+  let first=null, lock=false;
+  document.querySelectorAll('#memGrid .mem-card').forEach(cardEl=>{
+    cardEl.onclick=()=>{
+      if(lock) return;
+      const idx=+cardEl.dataset.idx, pid=+cardEl.dataset.pid;
+      if(t.matched.indexOf(pid)>=0) return;
+      if(cardEl.classList.contains('flip')) return;
+      cardEl.classList.add('flip');
+      if(first===null){ first={el:cardEl, idx, pid}; return; }
+      // второй клик
+      lock=true;
+      if(first.pid===pid && first.idx!==idx){
+        // совпало
+        setTimeout(()=>{
+          first.el.classList.add('matched'); cardEl.classList.add('matched');
+          t.matched.push(pid);
+          addScore(10);
+          const fb=document.getElementById('fb');
+          fb.className='fb good show'; fb.innerHTML='Пара найдена! +10 ⭐';
+          setTimeout(()=>{fb.className='fb';},900);
+          first=null; lock=false;
+          if(t.matched.length===t.pairs.length){
+            fb.className='fb good show'; fb.innerHTML='Все пары найдены! 🎉';
+            render(); // перерисуем с кнопкой "Дальше"
+          }
+        },350);
+      } else {
+        setTimeout(()=>{
+          first.el.classList.remove('flip'); cardEl.classList.remove('flip');
+          first=null; lock=false;
+        },750);
+      }
+    };
+  });
+}
+
+/* ---------- PICTURE MC ---------- */
+function renderPicMC(t){
+  const v=t.answer;
+  if(!t.options) t.options=shuffle([v,...pickDistractors(v,VOCAB,3)]);
+  let html='<div class="card"><div class="q-title">👀 Что это?</div>'
+    +'<div class="q-hint">Выбери правильную английскую фразу.</div>'
+    +'<div class="big-ico">'+iconHTML(v)+'</div><div class="opts" id="opts">';
+  t.options.forEach(o=>{ html+='<div class="opt" data-en="'+o.en+'">'+o.en+'</div>'; });
+  html+='</div>'+feedbackHTML()+navHTML(t.done)+'</div>';
+  screen().innerHTML=html; wireNav();
+  if(t.done){ lockOptionsReview(t.answer.en); return; }
+  wireMC(t, t.answer.en);
+}
+
+/* ---------- RU -> EN MC ---------- */
+function renderRuMC(t){
+  const v=t.answer;
+  if(!t.options) t.options=shuffle([v,...pickDistractors(v,VOCAB,3)]);
+  let html='<div class="card"><div class="q-title">Как сказать по-английски?</div>'
+    +'<div class="statement"><div class="s-txt">'+v.ru+'</div></div>'
+    +'<div class="opts" id="opts">';
+  t.options.forEach(o=>{ html+='<div class="opt" data-en="'+o.en+'">'+o.en+'</div>'; });
+  html+='</div>'+feedbackHTML()+navHTML(t.done)+'</div>';
+  screen().innerHTML=html; wireNav();
+  if(t.done){ lockOptionsReview(v.en); return; }
+  wireMC(t, v.en);
+}
+
+function wireMC(t, correctEn){
+  document.querySelectorAll('#opts .opt').forEach(op=>{
+    op.onclick=(ev)=>{
+      if(t.done) return;
+      const chosen=op.dataset.en;
+      document.querySelectorAll('#opts .opt').forEach(x=>x.classList.add('locked'));
+      if(chosen===correctEn){
+        op.classList.add('correct'); t.done=true; showGood(ev);
+      }else{
+        op.classList.add('wrong');
+        document.querySelectorAll('#opts .opt').forEach(x=>{ if(x.dataset.en===correctEn) x.classList.add('correct'); });
+        t.done=true;
+        showBad(correctEn, ()=>advance());
+      }
+    };
+  });
+}
+function lockOptionsReview(correctEn){
+  document.querySelectorAll('#opts .opt').forEach(x=>{
+    x.classList.add('locked');
+    if(x.dataset.en===correctEn) x.classList.add('correct');
+  });
+}
+
+/* ---------- TRUE / FALSE ---------- */
+function renderTF(t){
+  let html='<div class="card"><div class="q-title">✅❌ Правда или ложь?</div>'
+    +'<div class="q-hint">Картинка и фраза означают одно и то же?</div>'
+    +'<div class="statement"><div class="s-ico">'+iconHTML(t.pic)+'</div>'
+    +'<div class="s-txt">'+t.shown.en+'</div></div>'
+    +'<div class="tf-row" id="tfRow">'
+    +'<div class="tf-btn tf-true" data-v="true">✅ Правда</div>'
+    +'<div class="tf-btn tf-false" data-v="false">❌ Ложь</div></div>'
+    +feedbackHTML()+navHTML(t.done)+'</div>';
+  screen().innerHTML=html; wireNav();
+  const correct = t.isTrue;
+  const correctText = t.pic.en + ' = ' + t.pic.ru;
+  if(t.done){
+    document.querySelectorAll('#tfRow .tf-btn').forEach(b=>{
+      if((b.dataset.v==='true')===correct) b.classList.add('correct');
+    });
+    return;
+  }
+  document.querySelectorAll('#tfRow .tf-btn').forEach(b=>{
+    b.onclick=(ev)=>{
+      if(t.done) return;
+      const val=b.dataset.v==='true';
+      document.querySelectorAll('#tfRow .tf-btn').forEach(x=>x.style.pointerEvents='none');
+      if(val===correct){ b.classList.add('correct'); t.done=true; showGood(ev); }
+      else{
+        b.classList.add('wrong');
+        document.querySelectorAll('#tfRow .tf-btn').forEach(x=>{ if((x.dataset.v==='true')===correct) x.classList.add('correct'); });
+        t.done=true;
+        showBad('картинка = '+t.pic.en, ()=>advance());
+      }
+    };
+  });
+}
+
+/* ---------- ANAGRAM ---------- */
+function renderAnagram(t){
+  const letters=t.word.split('');
+  let scrambled=shuffle(letters);
+  while(scrambled.join('')===t.word && letters.length>1){ scrambled=shuffle(letters); }
+  if(!t.built) t.built=[];   // индексы использованных букв (в порядке банка)
+  if(!t.bankLetters) t.bankLetters=scrambled;
+  if(t.attempts===undefined) t.attempts=0;
+
+  let html='<div class="card"><div class="q-title">🧩 Собери слово</div>'
+    +'<div class="q-hint">Подсказка: '+t.hintRu+'  ('+t.phrase+')</div>'
+    +'<div class="ana-answer" id="anaAns"></div>'
+    +'<div class="ana-bank" id="anaBank"></div>'
+    +'<div class="type-row"><button class="btn wide orange" id="anaCheck">Проверить</button>'
+    +'<button class="btn grey" id="anaReset">Сбросить</button></div>'
+    +feedbackHTML()+navHTML(t.done)+'</div>';
+  screen().innerHTML=html; wireNav();
+
+  const ansEl=document.getElementById('anaAns');
+  const bankEl=document.getElementById('anaBank');
+  function draw(){
+    ansEl.innerHTML=''; bankEl.innerHTML='';
+    t.bankLetters.forEach((ch,i)=>{
+      const used=t.built.indexOf(i)>=0;
+      const tile=document.createElement('div');
+      tile.className='tile'+(used?' used':''); tile.textContent=ch;
+      tile.onclick=()=>{ if(t.done) return; if(t.built.indexOf(i)<0){ t.built.push(i); draw(); } };
+      bankEl.appendChild(tile);
+    });
+    t.built.forEach((bi,pos)=>{
+      const tile=document.createElement('div');
+      tile.className='tile'; tile.textContent=t.bankLetters[bi];
+      tile.onclick=()=>{ if(t.done) return; t.built.splice(pos,1); draw(); };
+      ansEl.appendChild(tile);
+    });
+  }
+  draw();
+  if(t.done){ document.getElementById('anaCheck').disabled=true; document.getElementById('anaReset').disabled=true; return; }
+
+  document.getElementById('anaReset').onclick=()=>{ if(t.done) return; t.built=[]; draw(); document.getElementById('fb').className='fb'; };
+  document.getElementById('anaCheck').onclick=(ev)=>{
+    if(t.done) return;
+    const guess=t.built.map(i=>t.bankLetters[i]).join('');
+    if(norm(guess)===norm(t.word)){ t.done=true; draw(); showGood(ev); }
+    else{
+      t.attempts++;
+      if(t.attempts>=2){ t.done=true; showBad(t.word, ()=>advance()); }
+      else{ showRetry('Не совсем. Попробуй ещё раз.'); }
+    }
+  };
+}
+
+/* ---------- WORD ORDER (Let's ...) ---------- */
+function renderOrder(t){
+  const words=['Let\u2019s'].concat(tokenizeWords(t.phrase));
+  if(!t.bank) t.bank=shuffle(words.map((w,i)=>({w,i})));
+  if(!t.built) t.built=[];      // массив индексов из bank
+  if(t.attempts===undefined) t.attempts=0;
+  const target=norm("lets "+t.phrase);
+
+  let html='<div class="card"><div class="q-title">🗣️ Собери предложение</div>'
+    +'<div class="q-hint">'+t.ru+' — составь фразу со словом Let\u2019s.</div>'
+    +'<div class="build-row" id="buildRow"></div>'
+    +'<div class="bank-row" id="bankRow"></div>'
+    +'<div class="type-row"><button class="btn wide orange" id="ordCheck">Проверить</button>'
+    +'<button class="btn grey" id="ordReset">Сбросить</button></div>'
+    +feedbackHTML()+navHTML(t.done)+'</div>';
+  screen().innerHTML=html; wireNav();
+
+  const buildRow=document.getElementById('buildRow');
+  const bankRow=document.getElementById('bankRow');
+  function draw(){
+    buildRow.innerHTML=''; bankRow.innerHTML='';
+    t.bank.forEach((item,bi)=>{
+      const used=t.built.indexOf(bi)>=0;
+      const chip=document.createElement('div');
+      chip.className='chip'+(used?' used':''); chip.textContent=item.w;
+      chip.onclick=()=>{ if(t.done) return; if(t.built.indexOf(bi)<0){ t.built.push(bi); draw(); } };
+      bankRow.appendChild(chip);
+    });
+    t.built.forEach((bi,pos)=>{
+      const chip=document.createElement('div');
+      chip.className='chip'; chip.textContent=t.bank[bi].w;
+      chip.onclick=()=>{ if(t.done) return; t.built.splice(pos,1); draw(); };
+      buildRow.appendChild(chip);
+    });
+  }
+  draw();
+  if(t.done){ document.getElementById('ordCheck').disabled=true; document.getElementById('ordReset').disabled=true; return; }
+
+  document.getElementById('ordReset').onclick=()=>{ if(t.done) return; t.built=[]; draw(); document.getElementById('fb').className='fb'; };
+  document.getElementById('ordCheck').onclick=(ev)=>{
+    if(t.done) return;
+    const guess=t.built.map(bi=>t.bank[bi].w).join(' ');
+    if(norm(guess)===target){ t.done=true; showGood(ev); }
+    else{
+      t.attempts++;
+      if(t.attempts>=2){ t.done=true; showBad("Let\u2019s "+t.phrase+".", ()=>advance()); }
+      else{ showRetry('Слова не по порядку. Ещё попытка!'); }
+    }
+  };
+}
+
+/* ---------- TYPE (Let's ...) ---------- */
+function renderType(t){
+  if(t.attempts===undefined) t.attempts=0;
+  const accepted=acceptedLets(t.phrase);
+  let html='<div class="card"><div class="q-title">✍️ Впиши фразу</div>'
+    +'<div class="q-hint">Напиши по-английски (со словом Let\u2019s):</div>'
+    +'<div class="statement"><div class="s-txt">'+t.ru+'</div></div>'
+    +'<div class="type-wrap"><div class="type-row">'
+    +'<input class="answer" id="ansInput" placeholder="Let\u2019s ..." autocomplete="off" autocapitalize="off" spellcheck="false">'
+    +'<button class="btn orange" id="ansBtn">Проверить</button></div></div>'
+    +feedbackHTML()+navHTML(t.done)+'</div>';
+  screen().innerHTML=html; wireNav();
+  const inp=document.getElementById('ansInput');
+  if(t.done){ inp.value="Let\u2019s "+t.phrase+"."; inp.disabled=true; inp.classList.add('ok'); document.getElementById('ansBtn').disabled=true; return; }
+  inp.focus();
+  function check(ev){
+    if(t.done) return;
+    const val=norm(inp.value);
+    if(!val){ inp.focus(); return; }
+    if(accepted.indexOf(val)>=0){ inp.classList.add('ok'); inp.disabled=true; t.done=true; showGood(ev); }
+    else{
+      t.attempts++; inp.classList.add('bad');
+      if(t.attempts>=2){ inp.disabled=true; t.done=true; showBad("Let\u2019s "+t.phrase+".", ()=>advance()); }
+      else{ showRetry('Проверь написание. Ещё попытка!'); setTimeout(()=>{inp.classList.remove('bad'); inp.focus();},400); }
+    }
+  }
+  document.getElementById('ansBtn').onclick=check;
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') check(e); });
+}
+
+/* ---------- LISTEN & TYPE ---------- */
+let voiceEn=null;
+function pickVoice(){
+  const vs=window.speechSynthesis? speechSynthesis.getVoices():[];
+  voiceEn = vs.find(v=>/en[-_]?(us|gb)/i.test(v.lang)) || vs.find(v=>/^en/i.test(v.lang)) || null;
+}
+if(window.speechSynthesis){ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; }
+function speak(text){
+  if(!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='en-US'; u.rate=.9; if(voiceEn) u.voice=voiceEn;
+  speechSynthesis.speak(u);
+}
+function renderListen(t){
+  if(t.attempts===undefined) t.attempts=0;
+  const accepted=acceptedPhrase(t.phrase);
+  let html='<div class="card"><div class="q-title">🎧 Слушай и пиши</div>'
+    +'<div class="q-hint">Нажми на кнопку, послушай и напиши фразу.</div>'
+    +'<button class="sound-btn" id="sndBtn"><span class="wave">🔊</span> Слушать</button>'
+    +'<div style="height:12px"></div>'
+    +'<div class="type-wrap"><div class="type-row">'
+    +'<input class="answer" id="ansInput" placeholder="напиши тут..." autocomplete="off" autocapitalize="off" spellcheck="false">'
+    +'<button class="btn orange" id="ansBtn">Проверить</button></div></div>'
+    +feedbackHTML()+navHTML(t.done)+'</div>';
+  screen().innerHTML=html; wireNav();
+  document.getElementById('sndBtn').onclick=()=>speak(t.phrase);
+  const inp=document.getElementById('ansInput');
+  if(t.done){ inp.value=t.phrase; inp.disabled=true; inp.classList.add('ok'); document.getElementById('ansBtn').disabled=true; return; }
+  setTimeout(()=>speak(t.phrase),400);
+  function check(ev){
+    if(t.done) return;
+    const val=norm(inp.value); if(!val){ inp.focus(); return; }
+    if(accepted.indexOf(val)>=0){ inp.classList.add('ok'); inp.disabled=true; t.done=true; showGood(ev); }
+    else{
+      t.attempts++; inp.classList.add('bad');
+      if(t.attempts>=2){ inp.disabled=true; t.done=true; showBad(t.phrase, ()=>advance()); }
+      else{ showRetry('Послушай ещё раз и проверь написание.'); setTimeout(()=>{inp.classList.remove('bad'); inp.focus();},400); }
+    }
+  }
+  document.getElementById('ansBtn').onclick=check;
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') check(e); });
+}
+
+/* ---------- WHACK-A-MOLE ---------- */
+function renderWhack(t){
+  let html='<div class="card"><div class="q-title">🔨 Поймай ответ</div>'
+    +'<div class="whack-target">Найди: <b>'+t.answer.ru+'</b></div>'
+    +'<div class="holes" id="holes">';
+  t.moles.forEach((m,i)=>{
+    html+='<div class="hole"><div class="mole" data-en="'+m.en+'" data-i="'+i+'">'+m.en+'</div></div>';
+  });
+  html+='</div>'+feedbackHTML()+navHTML(t.done)+'</div>';
+  screen().innerHTML=html; wireNav();
+
+  const moles=[...document.querySelectorAll('#holes .mole')];
+  if(t.done){ moles.forEach(m=>{ if(m.dataset.en===t.answer.en) m.classList.add('up','correct'); }); return; }
+  // всплываем по очереди
+  moles.forEach((m,idx)=> setTimeout(()=>m.classList.add('up'), 120*idx+150));
+
+  moles.forEach(m=>{
+    m.onclick=(ev)=>{
+      if(t.done) return;
+      if(m.dataset.en===t.answer.en){
+        m.classList.add('correct'); t.done=true;
+        moles.forEach(x=>x.style.pointerEvents='none');
+        showGood(ev);
+      }else{
+        m.classList.add('shake');
+        setTimeout(()=>m.classList.remove('shake'),400);
+        showRetry('Это другое. Найди «'+t.answer.ru+'».');
+      }
+    };
+  });
+}
+
+/* ---------- BOSS ---------- */
+function bossSvg(defeated){
+  const eye = defeated? '' : '<circle cx="42" cy="52" r="5" fill="#2A2E45"/><circle cx="70" cy="52" r="5" fill="#2A2E45"/>';
+  const mouth = defeated
+    ? '<path d="M44 66 Q56 60 68 66" fill="none" stroke="#2A2E45" stroke-width="3" stroke-linecap="round"/>' // улыбка (побеждён = подобрел)
+    : '<path d="M44 68 Q56 60 68 68" fill="none" stroke="#2A2E45" stroke-width="3" stroke-linecap="round" transform="rotate(180 56 64)"/>'; // хмурый
+  return '<svg class="boss-svg" id="bossSvg" viewBox="0 0 112 112" xmlns="http://www.w3.org/2000/svg">'
+    +'<ellipse cx="56" cy="46" rx="40" ry="26" fill="'+(defeated?'#cfe8ff':'#9aa4b8')+'"/>'
+    +'<ellipse cx="34" cy="50" rx="18" ry="16" fill="'+(defeated?'#cfe8ff':'#9aa4b8')+'"/>'
+    +'<ellipse cx="80" cy="50" rx="18" ry="16" fill="'+(defeated?'#cfe8ff':'#9aa4b8')+'"/>'
+    +eye+mouth
+    +(defeated?'<text x="56" y="98" font-size="20" text-anchor="middle">🌈</text>'
+      :'<g stroke="#5AA9E6" stroke-width="4" stroke-linecap="round"><line x1="40" y1="78" x2="36" y2="92"/><line x1="56" y1="80" x2="52" y2="96"/><line x1="72" y1="78" x2="68" y2="92"/></g>')
+    +'</svg>';
+}
+function renderBoss(t){
+  const v=t.answer;
+  if(!t.options) t.options=shuffle([v,...pickDistractors(v,VOCAB,3)]);
+  const defeated=state.bossHP<=0;
+  const hpPct=Math.max(0,state.bossHP)/state.bossMaxHP*100;
+  let html='<div class="card boss-stage"><div class="q-title">🌧️ Скучный Дождь</div>'
+    +bossSvg(defeated)
+    +'<div class="hp-wrap"><div class="hp-label">Здоровье босса: '+Math.max(0,state.bossHP)+' / '+state.bossMaxHP+'</div>'
+    +'<div class="hp"><i style="width:'+hpPct+'%"></i></div></div>'
+    +'<div class="q-hint">Верный ответ — удар по боссу (−1 ❤️). Ошибка — босс лечится (+1 ❤️).</div>'
+    +'<div class="statement"><div class="s-txt">'+v.ru+'</div></div>'
+    +'<div class="opts" id="opts">';
+  t.options.forEach(o=>{ html+='<div class="opt" data-en="'+o.en+'">'+o.en+'</div>'; });
+  html+='</div>'+feedbackHTML()+navHTML(t.done)+'</div>';
+  screen().innerHTML=html; wireNav();
+
+  if(t.done){ lockOptionsReview(v.en); return; }
+  document.querySelectorAll('#opts .opt').forEach(op=>{
+    op.onclick=(ev)=>{
+      if(t.done) return;
+      document.querySelectorAll('#opts .opt').forEach(x=>x.classList.add('locked'));
+      if(op.dataset.en===v.en){
+        op.classList.add('correct'); t.done=true;
+        state.bossHP=Math.max(0,state.bossHP-1);
+        const bs=document.getElementById('bossSvg'); if(bs){ bs.classList.add('hit'); }
+        showGood(ev);
+      }else{
+        op.classList.add('wrong');
+        document.querySelectorAll('#opts .opt').forEach(x=>{ if(x.dataset.en===v.en) x.classList.add('correct'); });
+        state.bossHP=Math.min(state.bossMaxHP,state.bossHP+1);
+        t.done=true;
+        showBad(v.en, ()=>advance());
+      }
+    };
+  });
+}
+
+/* ============ СТАРТ / ФИНАЛ ============ */
+function mascotSVG(size, cls){
+  size=size||150; cls=cls||'mascot-big bounce';
+  return '<svg class="'+cls+'" viewBox="0 0 120 120" width="'+size+'" height="'+size+'" xmlns="http://www.w3.org/2000/svg">'
+    +'<ellipse cx="60" cy="108" rx="26" ry="6" fill="rgba(40,44,80,.12)"/>'
+    +'<circle cx="60" cy="58" r="40" fill="#FF8A3D"/>'
+    +'<circle cx="60" cy="58" r="40" fill="none" stroke="#f26f1c" stroke-width="3"/>'
+    +'<rect x="24" y="34" width="72" height="12" rx="6" fill="#7C4DFF"/>'   // headband
+    +'<rect x="55" y="24" width="10" height="12" rx="4" fill="#7C4DFF"/>'   // little tuft
+    +'<circle cx="46" cy="58" r="8" fill="#fff"/><circle cx="74" cy="58" r="8" fill="#fff"/>'
+    +'<circle cx="47" cy="60" r="4" fill="#2A2E45"/><circle cx="75" cy="60" r="4" fill="#2A2E45"/>'
+    +'<circle cx="42" cy="72" r="5" fill="#ff5d5d" opacity=".5"/><circle cx="78" cy="72" r="5" fill="#ff5d5d" opacity=".5"/>'
+    +'<path d="M48 74 Q60 86 72 74" fill="none" stroke="#2A2E45" stroke-width="4" stroke-linecap="round"/>'
+    +'<line x1="22" y1="64" x2="10" y2="58" stroke="#f26f1c" stroke-width="7" stroke-linecap="round"/>'
+    +'<line x1="98" y1="64" x2="110" y2="58" stroke="#f26f1c" stroke-width="7" stroke-linecap="round"/>'
+    +'</svg>';
+}
+function renderStart(){
+  updateHUD(null);
+  document.getElementById('stageLabel').textContent="День на площадке";
+  document.getElementById('stageSub').textContent="Let's play!";
+  const s='<div class="card center-card">'
+    +mascotSVG(150)
+    +'<h1>Let\u2019s play! ⚽🪁🛹</h1>'
+    +'<p>Привет! Я <b>Спорти</b>. Давай проведём весёлый день на площадке и выучим спортивные фразы!</p>'
+    +'<div class="rules">'
+    +'<b>Что учим:</b> fly a kite, jump rope, play soccer, ride a bike, throw / catch / bounce a ball и другие — и конструкцию <b>Let\u2019s ...</b><br><br>'
+    +'<b>Как играть:</b> за каждый верный ответ +10 ⭐. Солнце-шкала 🌞 будет расти, а небо — светлеть до заката. В конце нас ждёт <b>Скучный Дождь</b> ☔ — прогоним его!'
+    +'</div>'
+    +'<button class="btn wide orange" id="startBtn" style="font-size:20px; padding:16px;">Начать игру ▶</button>'
+    +'<p style="font-size:13px; margin-top:10px;">Всего '+state.tasks.length+' заданий · максимум '+state.totalPoints+' ⭐</p>'
+    +'</div>';
+  screen().innerHTML=s;
+  document.getElementById('startBtn').onclick=()=>{ state.pointer=0; render(); };
+}
+function renderFinal(){
+  updateHUD(null);
+  document.getElementById('stageLabel').textContent="Игра пройдена!";
+  document.getElementById('stageSub').textContent="Молодец!";
+  const pct = state.totalPoints? state.score/state.totalPoints : 0;
+  let stars = pct>=0.9?3 : pct>=0.7?2 : pct>=0.5?1 : 0;
+  const starStr = '⭐'.repeat(stars) + '☆'.repeat(3-stars);
+  let msg = stars>=3?'Идеально! Ты чемпион площадки! 🏆'
+          : stars>=2?'Отличная игра! Совсем чуть-чуть до максимума!'
+          : stars>=1?'Хорошая работа! Давай сыграем ещё разок?'
+          : 'Ты справился! Повтори слова и попробуй снова 💪';
+  const s='<div class="card center-card">'
+    +mascotSVG(140)
+    +'<h1>🎉 День удался!</h1>'
+    +'<div class="stars-final">'+starStr+'</div>'
+    +'<div class="final-score">'+state.score+' / '+state.totalPoints+' ⭐</div>'
+    +'<p>'+msg+'</p>'
+    +'<button class="btn wide orange" id="againBtn" style="font-size:19px; padding:15px; margin-top:12px;">Играть снова 🔁</button>'
+    +'</div>';
+  screen().innerHTML=s;
+  document.getElementById('againBtn').onclick=()=>restart();
+}
+
+/* ============ ЗАПУСК ============ */
+function restart(){
+  state.score=0; state.pointer=0; state.bossHP=state.bossMaxHP; doneUnits=0;
+  document.getElementById('scoreNum').textContent='0';
+  buildTasks();
+  renderStart();
+}
+buildTasks();
+renderStart();
+</script>
+</body>
+</html>
